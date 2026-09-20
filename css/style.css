@@ -538,6 +538,7 @@ form.app {
   border-left: 2px solid var(--gold-dim);
   padding-left: 0.9rem;
 }
+.faq .qa .press { margin-top: 0.9rem; }
 
 /* ---------- Divider ---------- */
 .ornament {
