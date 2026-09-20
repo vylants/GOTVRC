@@ -118,8 +118,6 @@ const DEVICES = {
   }
 };
 
-var HOUSES = [];
-
 function sigilSvg(house, uid) {
   const id = 'sg-' + uid;
   const field = house.device.field;
@@ -136,25 +134,3 @@ function sigilSvg(house, uid) {
     '<g transform="translate(60 82) scale(0.95) translate(-50 -50)">' + device + '</g>' +
     '</g></svg>';
 }
-
-var __housesRequest = null;
-
-function loadHouses() {
-  if (__housesRequest) return __housesRequest;
-  __housesRequest = fetch('houses.json', { cache: 'no-store' })
-    .then(function (r) {
-      if (!r.ok) throw new Error('no houses.json');
-      return r.json();
-    })
-    .then(function (data) {
-      var list = Array.isArray(data) ? data : (data.houses || []);
-      HOUSES = list;
-      return HOUSES;
-    })
-    .catch(function () {
-      return HOUSES;
-    });
-  return __housesRequest;
-}
-
-window.loadHouses = loadHouses;
