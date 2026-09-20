@@ -10,62 +10,44 @@
   html, body { width: 2000px; height: 1126px; overflow: hidden; }
   body {
     font-family: 'Cinzel', serif;
-    color: #eef2f6;
+    color: #fff;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(120% 130% at 50% 8%, #1c1e23 0%, #101216 42%, #07080a 100%);
+    background: #000;
   }
-  .vignette {
-    position: absolute; inset: 0;
-    background: radial-gradient(90% 80% at 50% 45%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.6) 100%);
-  }
-  .frame { position: absolute; inset: 40px; border: 3px solid #a8b1ba; }
-  .frame:before { content: ''; position: absolute; inset: 11px; border: 1px solid rgba(238,242,246,0.4); }
-  .corner { position: absolute; width: 24px; height: 24px; border: 3px solid #eef2f6; transform: rotate(45deg); }
-  .tl { top: 23px; left: 23px; }
-  .tr { top: 23px; right: 23px; }
-  .bl { bottom: 23px; left: 23px; }
-  .br { bottom: 23px; right: 23px; }
+  .frame { position: absolute; inset: 40px; border: 2px solid #fff; }
+  .frame:before { content: ''; position: absolute; inset: 9px; border: 1px solid rgba(255,255,255,0.45); }
+  .corner { position: absolute; width: 20px; height: 20px; border: 3px solid #fff; transform: rotate(45deg); }
+  .tl { top: 24px; left: 24px; }
+  .tr { top: 24px; right: 24px; }
+  .bl { bottom: 24px; left: 24px; }
+  .br { bottom: 24px; right: 24px; }
 
-  .center { position: relative; text-align: center; transform: translateY(-58px); }
-  .flame {
+  .center { position: relative; text-align: center; }
+  .vrh {
     display: block;
-    margin: 0 auto 18px;
-    width: 190px;
-    filter: invert(1) drop-shadow(0 10px 24px rgba(0,0,0,0.65)) drop-shadow(0 0 34px rgba(168,177,186,0.28));
+    margin: 0 auto;
+    width: 860px;
   }
-  h1 {
-    font-weight: 900;
-    font-size: 46px;
-    letter-spacing: 0.1em;
-    line-height: 1;
-    background: linear-gradient(180deg, #ffffff 0%, #d5dbe1 48%, #8d98a3 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 0 2px 0 rgba(0,0,0,0.35);
-  }
-  .rule { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 12px 0 11px; }
-  .rule span { display: block; width: 150px; height: 1px; background: linear-gradient(90deg, rgba(168,177,186,0), #a8b1ba, rgba(168,177,186,0)); }
-  .rule i { color: #eef2f6; font-style: normal; font-size: 12px; }
-  .sub { font-size: 17px; letter-spacing: 0.4em; color: #9aa4ad; text-indent: 0.4em; }
-  .tag { margin-top: 15px; font-family: 'Lora', serif; font-style: italic; font-size: 19px; letter-spacing: 0.1em; color: #cfd6de; }
-  .foot { margin-top: 26px; font-size: 18px; letter-spacing: 0.32em; color: #7c8791; text-indent: 0.32em; }
-  .foot b { color: #eef2f6; font-weight: 600; }
+  .rule { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 16px 0 13px; }
+  .rule span { display: block; width: 150px; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,0), #fff, rgba(255,255,255,0)); }
+  .rule i { color: #fff; font-style: normal; font-size: 12px; }
+  .sub { font-size: 19px; letter-spacing: 0.5em; color: #fff; text-indent: 0.5em; }
+  .tag { margin-top: 16px; font-family: 'Lora', serif; font-style: italic; font-size: 20px; letter-spacing: 0.1em; color: #d9d9d9; }
+  .foot { margin-top: 26px; font-size: 17px; letter-spacing: 0.32em; color: #a3a3a3; text-indent: 0.32em; }
+  .foot b { color: #fff; font-weight: 600; }
 </style>
 </head>
 <body>
-  <div class="vignette"></div>
   <div class="frame"></div>
   <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
 
   <div class="center">
-    <img class="flame" src="motto.png" alt="The Dark Yields to Us">
-    <h1>VRH: THE SEVEN KINGDOMS</h1>
+    <img class="vrh" src="vrh-white.png" alt="VRH">
     <div class="rule"><span></span><i>&#9670;</i><span></span></div>
-    <div class="sub">A GAME OF THRONES ROLEPLAY</div>
+    <div class="sub">THE SEVEN KINGDOMS</div>
     <div class="tag">&ldquo;The Dark Yields to Us&rdquo;</div>
     <div class="foot">VRCHAT ROLEPLAY &nbsp;&middot;&nbsp; <b>discord.gg/2j9Zs5wPbV</b></div>
   </div>
