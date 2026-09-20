@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Seven Kingdoms — Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: #000; }
+  body { font-family: 'Lora', Georgia, serif; color: #fff; }
+
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 0.7rem 1.2rem;
+    background: rgba(0,0,0,0.92);
+    border-bottom: 1px solid rgba(255,255,255,0.25);
+    font-family: 'Cinzel', serif;
+  }
+  .topbar .brand { font-weight: 900; letter-spacing: 0.22em; font-size: 1.05rem; }
+  .topbar .brand small { display: block; font-weight: 400; font-size: 0.6rem; letter-spacing: 0.42em; color: #aaa; }
+  .topbar nav a {
+    color: #ddd; text-decoration: none; font-size: 0.72rem; letter-spacing: 0.18em;
+    margin-left: 1rem; text-transform: uppercase;
+  }
+  .topbar nav a:hover { color: #fff; }
+
+  #viewport {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    overflow: hidden; cursor: grab; background:
+      radial-gradient(130% 100% at 50% 20%, #141414 0%, #050505 70%);
+    touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  #viewport.dragging { cursor: grabbing; }
+  #map { display: block; position: absolute; transform-origin: 0 0; }
+
+  .region { fill: #1e1e1e; stroke: #fff; stroke-width: 1.5; transition: fill 0.18s, stroke-width 0.18s; cursor: pointer; }
+  .region:hover { fill: #2e2e2e; }
+  .region.active { fill: #3a3a3a; stroke: #fff; stroke-width: 2.5; }
+  .region.active.extra { fill: #444; }
+
+  .land { fill: #171717; stroke: none; }
+
+  .city { fill: #fff; stroke: #000; stroke-width: 1; cursor: pointer; }
+  .city:hover { fill: #aaa; }
+  .city-label { fill: #cfcfcf; font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.08em; pointer-events: none; }
+
+  .region-label { fill: #e8e8e8; font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; letter-spacing: 0.28em; pointer-events: none; }
+  .region-label.small { font-size: 15px; }
+
+  .controls {
+    position: fixed; right: 1.1rem; bottom: 1.1rem; z-index: 25;
+    display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .controls button {
+    width: 44px; height: 44px;
+    background: #0a0a0a; color: #fff; border: 1px solid rgba(255,255,255,0.55);
+    font-family: 'Cinzel', serif; font-size: 20px; cursor: pointer; line-height: 1;
+  }
+  .controls button:hover { background: #fff; color: #000; }
+  .controls button.reset { font-size: 13px; }
+
+  .legend {
+    position: fixed; left: 1.1rem; top: 4.6rem; z-index: 25;
+    width: 240px; max-height: calc(100vh - 8rem); overflow: auto;
+    background: rgba(0,0,0,0.9); border: 1px solid rgba(255,255,255,0.3);
+    padding: 0.8rem 0.9rem;
+  }
+  .legend h3 { font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.24em; color: #aaa; margin-bottom: 0.6rem; text-transform: uppercase; }
+  .legend ul { list-style: none; }
+  .legend li {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.32rem 0.4rem; cursor: pointer; border: 1px solid transparent;
+    font-size: 0.92rem;
+  }
+  .legend li:hover { background: rgba(255,255,255,0.08); }
+  .legend li.active { border-color: rgba(255,255,255,0.6); }
+  .legend .dot { width: 12px; height: 12px; border: 1px solid #fff; flex: 0 0 auto; }
+  .legend .st { margin-left: auto; font-size: 0.62rem; letter-spacing: 0.18em; color: #999; text-transform: uppercase; }
+
+  .panel {
+    position: fixed; right: 1.1rem; top: 4.6rem; z-index: 25;
+    width: 280px; max-height: calc(100vh - 8rem); overflow: auto;
+    background: rgba(0,0,0,0.92); border: 1px solid rgba(255,255,255,0.4);
+    padding: 1rem 1.1rem;
+  }
+  .panel h2 { font-family: 'Cinzel', serif; font-size: 1.15rem; letter-spacing: 0.12em; }
+  .panel .region-name { color: #999; font-family: 'Cinzel', serif; font-size: 0.66rem; letter-spacing: 0.3em; margin-top: 0.2rem; text-transform: uppercase; }
+  .panel .words { font-style: italic; color: #cfcfcf; margin: 0.9rem 0; border-left: 2px solid #fff; padding-left: 0.8rem; }
+  .panel .kv { font-size: 0.9rem; margin: 0.45rem 0; color: #e5e5e5; }
+  .panel .kv b { font-family: 'Cinzel', serif; font-size: 0.64rem; letter-spacing: 0.2em; color: #999; display: block; text-transform: uppercase; }
+  .panel .kv span { display: block; }
+  .panel .status-claimed { color: #fff; }
+  .panel .status-open { color: #888; }
+  .panel .empty { color: #888; font-style: italic; font-size: 0.9rem; }
+
+  .hint {
+    position: fixed; bottom: 1.1rem; left: 50%; transform: translateX(-50%);
+    z-index: 20; color: #888; font-size: 0.78rem; letter-spacing: 0.14em; font-family: 'Cinzel', serif;
+    background: rgba(0,0,0,0.7); padding: 0.35rem 0.9rem; border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #333; }
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">THE SEVEN KINGDOMS<small>INTERACTIVE MAP</small></div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="index.html#apply">How to Join</a>
+      <a href="index.html#faq">FAQ</a>
+    </nav>
+  </header>
+
+  <div id="viewport" tabindex="0">
+    <svg id="map" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900"></svg>
+  </div>
+
+  <aside class="legend">
+    <h3>Current Houses</h3>
+    <ul id="legend"></ul>
+  </aside>
+
+  <aside class="panel" id="panel">
+    <div class="empty" id="panel-empty">Select a region or house on the map to see its holdings.</div>
+    <div id="panel-body" style="display:none;">
+      <h2 id="p-name"></h2>
+      <div class="region-name" id="p-region"></div>
+      <div class="words" id="p-words"></div>
+      <div class="kv"><b>Sigil</b><span id="p-sigil"></span></div>
+      <div class="kv"><b>Leader</b><span id="p-leader"></span></div>
+      <div class="kv"><b>Status</b><span id="p-status"></span></div>
+      <div class="kv"><b>Note</b><span id="p-note"></span></div>
+    </div>
+  </aside>
+
+  <div class="controls">
+    <button id="zoom-in" title="Zoom in">+</button>
+    <button id="zoom-out" title="Zoom out">&minus;</button>
+    <button id="reset" class="reset" title="Reset">RESET</button>
+  </div>
+
+  <div class="hint">Drag to pan &middot; Scroll to zoom</div>
+
+<script>
+(function () {
+  var REGIONS = [
+    { key: 'north',      name: 'THE NORTH',       label: 'North',      compact: false, labelPos: [400, 255],
+      path: 'M185,60 L420,45 L680,60 L785,110 L800,200 L775,270 L730,310 L640,330 L520,345 L400,330 L300,315 L230,272 L178,200 L175,120 Z',
+      city: 'Winterfell', cityPos: [470, 210], cityOf: 'north' },
+    { key: 'iron',       name: 'THE IRON ISLANDS',label: 'Iron Is.',    compact: true, labelPos: [110, 352],
+      path: 'M95,315 L70,350 L98,392 L150,375 L160,330 L135,300 Z',
+      city: 'Pyke', cityPos: [112, 336], cityOf: 'iron' },
+    { key: 'west',       name: 'THE WESTERLANDS', label: 'Westerlands', compact: false, labelPos: [130, 520],
+      path: 'M135,410 L100,468 L118,545 L188,580 L232,525 L205,460 L175,422 Z',
+      city: 'Casterly Rock', cityPos: [165, 500], cityOf: 'west' },
+    { key: 'river',      name: 'THE RIVERLANDS',  label: 'Riverlands',  compact: false, labelPos: [480, 320],
+      path: 'M235,348 L340,340 L465,352 L590,352 L705,345 L735,395 L690,455 L585,470 L465,465 L340,475 L245,390 Z',
+      city: 'Riverrun', cityPos: [390, 400], cityOf: 'river' },
+    { key: 'vale',       name: 'THE VALE',        label: 'Vale',        compact: false, labelPos: [775, 320],
+      path: 'M700,292 L810,262 L845,320 L860,395 L810,452 L742,462 L700,420 L685,360 Z',
+      city: 'The Eyrie', cityPos: [775, 355], cityOf: 'vale' },
+    { key: 'crown',      name: 'THE CROWNLANDS',  label: 'Crownlands',  compact: true, labelPos: [505, 395],
+      path: 'M395,442 L380,400 L455,362 L580,352 L640,382 L635,440 L575,468 L475,470 L415,458 Z',
+      city: 'King\u2019s Landing', cityPos: [510, 415], cityOf: 'crown' },
+    { key: 'reach',      name: 'THE REACH',       label: 'Reach',       compact: false, labelPos: [420, 515],
+      path: 'M200,480 L420,472 L620,485 L680,535 L640,600 L560,655 L430,665 L280,655 L200,595 Z',
+      city: 'Highgarden', cityPos: [430, 570], cityOf: 'reach' },
+    { key: 'storm',      name: 'THE STORMLANDS',  label: 'Stormlands',  compact: true, labelPos: [680, 475],
+      path: 'M610,442 L700,425 L768,462 L790,535 L745,595 L682,615 L618,575 L598,505 Z',
+      city: 'Storm\u2019s End', cityPos: [695, 525], cityOf: 'storm' },
+    { key: 'dorne',      name: 'DORNE',           label: 'Dorne',       compact: false, labelPos: [480, 795],
+      path: 'M265,655 L440,675 L620,658 L700,695 L662,780 L520,830 L380,822 L285,778 L245,720 Z',
+      city: 'Sunspear', cityPos: [505, 755], cityOf: 'dorne' }
+  ];
+
+  var HOUSES = {
+    north: { name: 'House Stark',     sigil: 'Direwolf',    words: 'Winter Is Coming',                leader: 'Open',        status: 'claimed', note: 'Wardens of the North.' },
+    iron:  { name: 'House Greyjoy',   sigil: 'Kraken',      words: 'We Do Not Sow',                   leader: 'Open',        status: 'claimed', note: 'Lords of the Iron Islands.' },
+    west:  { name: 'House Lannister', sigil: 'Lion',        words: 'Hear Me Roar!',                  leader: 'Open',        status: 'claimed', note: 'The Rock. Wealth of the realm.' },
+    river: { name: 'House Tully',     sigil: 'Trout',       words: 'Family, Duty, Honor',             leader: 'Open',        status: 'claimed', note: 'Lords of the Trident.' },
+    vale:  { name: 'House Arryn',     sigil: 'Falcon',      words: 'As High as Honor',                leader: 'Open',        status: 'claimed', note: 'Knights of the Vale.' },
+    crown: { name: 'The Crown',       sigil: 'Dragon',      words: 'Fire and Blood',                  leader: 'Open',        status: 'claimed', note: 'Seat of the Iron Throne.' },
+    reach: { name: 'House Tyrell',    sigil: 'Rose',        words: 'Growing Strong',                  leader: 'Open',        status: 'claimed', note: 'The Reach — never in want.' },
+    storm: { name: 'House Baratheon', sigil: 'Stag',        words: 'Ours Is the Fury',                leader: 'Open',        status: 'claimed', note: 'Lords of Storm\u2019s End.' },
+    dorne: { name: 'House Martell',   sigil: 'Sun Spear',   words: 'Unbowed, Unbent, Unbroken',       leader: 'Open',        status: 'claimed', note: 'Princes of Dorne.' }
+  };
+
+  var land = 'M185,60 L420,45 L680,60 L785,110 L800,200 L775,270 L730,310 L700,292 L810,262 L845,320 L860,395 L810,452 L742,462 L700,420 L768,462 L790,535 L745,595 L682,615 L618,575 L598,505 L640,382 L580,352 L455,362 L380,400 L340,475 L245,390 L200,480 L280,655 L285,778 L380,822 L520,830 L662,780 L700,695 L640,600 L560,655 L430,665 L200,595 L210,92 L120,180 L95,315 L150,375 L160,330 L135,300 L115,318 L88,260 L130,150 Z';
+
+  var svg = document.getElementById('map');
+  var viewport = document.getElementById('viewport');
+  var view = { scale: 1, tx: 0, ty: 0 };
+
+  function applyView() {
+    svg.style.transform = 'translate(' + view.tx + 'px,' + view.ty + 'px) scale(' + view.scale + ')';
+  }
+
+  function fit() {
+    var w = viewport.clientWidth, h = viewport.clientHeight;
+    view.scale = Math.min(w / 1000, h / 900) * 0.92;
+    view.tx = (w - 1000 * view.scale) / 2;
+    view.ty = (h - 900 * view.scale) / 2;
+    applyView();
+  }
+
+  function zoomAt(mx, my, factor) {
+    var px = (mx - view.tx) / view.scale;
+    var py = (my - view.ty) / view.scale;
+    view.scale = Math.min(8, Math.max(1, view.scale * factor));
+    view.tx = mx - px * view.scale;
+    view.ty = my - py * view.scale;
+    applyView();
+  }
+
+  var active = null;
+
+  function select(key) {
+    if (active) {
+      var oldEl = svg.querySelector('[data-key="' + active + '"]');
+      if (oldEl) oldEl.classList.remove('active');
+      var oldLeg = document.querySelector('#legend li[data-key="' + active + '"]');
+      if (oldLeg) oldLeg.classList.remove('active');
+    }
+    active = key;
+    if (!key) {
+      document.getElementById('panel-body').style.display = 'none';
+      document.getElementById('panel-empty').style.display = 'block';
+      return;
+    }
+    var el = svg.querySelector('[data-key="' + key + '"]');
+    if (el) el.classList.add('active');
+    var leg = document.querySelector('#legend li[data-key="' + key + '"]');
+    if (leg) leg.classList.add('active');
+    showPanel(key);
+  }
+
+  function showPanel(key) {
+    var h = HOUSES[key], r = REGIONS.filter(function (x) { return x.key === key; })[0];
+    var body = document.getElementById('panel-body');
+    document.getElementById('p-name').textContent = h.name;
+    document.getElementById('p-region').textContent = r.name;
+    document.getElementById('p-words').textContent = '\u201C' + h.words + '\u201D';
+    document.getElementById('p-sigil').textContent = h.sigil;
+    document.getElementById('p-leader').textContent = h.leader === 'Open' ? 'Open' : h.leader;
+    var st = document.getElementById('p-status');
+    st.textContent = h.status === 'claimed' ? 'Claimed' : 'Open';
+    st.className = h.status === 'claimed' ? 'status-claimed' : 'status-open';
+    document.getElementById('p-note').textContent = h.note;
+    document.getElementById('panel-empty').style.display = 'none';
+    body.style.display = 'block';
+  }
+
+  function buildMap() {
+    var ns = 'http://www.w3.org/2000/svg';
+    var landEl = document.createElementNS(ns, 'path');
+    landEl.setAttribute('d', land);
+    landEl.setAttribute('class', 'land');
+    svg.appendChild(landEl);
+
+    REGIONS.forEach(function (r) {
+      var p = document.createElementNS(ns, 'path');
+      p.setAttribute('d', r.path);
+      p.setAttribute('class', 'region');
+      p.setAttribute('data-key', r.key);
+      svg.appendChild(p);
+
+      var t = document.createElementNS(ns, 'text');
+      t.setAttribute('x', r.labelPos[0]);
+      t.setAttribute('y', r.labelPos[1]);
+      t.textContent = r.label;
+      t.setAttribute('class', r.compact ? 'region-label small' : 'region-label');
+      svg.appendChild(t);
+
+      var c = document.createElementNS(ns, 'circle');
+      c.setAttribute('cx', r.cityPos[0]);
+      c.setAttribute('cy', r.cityPos[1]);
+      c.setAttribute('r', 4.5);
+      c.setAttribute('class', 'city');
+      c.setAttribute('data-key', r.key);
+      svg.appendChild(c);
+
+      var cl = document.createElementNS(ns, 'text');
+      cl.setAttribute('x', r.cityPos[0] + 8);
+      cl.setAttribute('y', r.cityPos[1] + 4);
+      cl.setAttribute('class', 'city-label');
+      cl.textContent = r.city;
+      svg.appendChild(cl);
+
+      var leg = document.createElement('li');
+      leg.setAttribute('data-key', r.key);
+      leg.innerHTML = '<span class="dot"></span><span>' + HOUSES[r.key].name + '</span><span class="st">' +
+        (HOUSES[r.key].status === 'claimed' ? 'Claims' : 'Open') + '</span>';
+      leg.addEventListener('click', function () {
+        select(r.key);
+        var w = viewport.clientWidth, h = viewport.clientHeight;
+        var s = Math.max(view.scale, 2.4);
+        view.scale = s;
+        view.tx = w / 2 - r.labelPos[0] * s;
+        view.ty = h / 2 - r.labelPos[1] * s;
+        applyView();
+      });
+      document.getElementById('legend').appendChild(leg);
+    });
+  }
+
+  window.addEventListener('resize', fit);
+
+  var dragging = false, start = null, suppressClick = false;
+
+  function suppress() {
+    suppressClick = true;
+    setTimeout(function () { suppressClick = false; }, 120);
+  }
+
+  svg.querySelectorAll('.region, .city').forEach(function (el) {
+    el.addEventListener('click', function () {
+      if (suppressClick) return;
+      select(el.getAttribute('data-key'));
+    });
+  });
+
+  viewport.addEventListener('pointerdown', function (e) {
+    if (e.target.closest && e.target.closest('.region, .city')) return;
+    dragging = true; viewport.classList.add('dragging');
+    start = { x: e.clientX - view.tx, y: e.clientY - view.ty };
+    viewport.setPointerCapture(e.pointerId);
+  });
+
+  viewport.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    var moved = Math.abs(e.clientX - start.x - view.tx) + Math.abs(e.clientY - start.y - view.ty);
+    if (moved > 6) suppress();
+    view.tx = e.clientX - start.x;
+    view.ty = e.clientY - start.y;
+    applyView();
+  });
+
+  viewport.addEventListener('pointerup', function () {
+    dragging = false; viewport.classList.remove('dragging');
+  });
+  viewport.addEventListener('pointerleave', function () {
+    dragging = false; viewport.classList.remove('dragging');
+  });
+
+  viewport.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var rect = viewport.getBoundingClientRect();
+    zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY < 0 ? 1.18 : 0.85);
+  }, { passive: false });
+
+  document.getElementById('zoom-in').addEventListener('click', function () {
+    var rect = viewport.getBoundingClientRect();
+    zoomAt(rect.width / 2, rect.height / 2, 1.3);
+  });
+  document.getElementById('zoom-out').addEventListener('click', function () {
+    var rect = viewport.getBoundingClientRect();
+    zoomAt(rect.width / 2, rect.height / 2, 0.77);
+  });
+  document.getElementById('reset').addEventListener('click', function () {
+    view.scale = 1; fit(); select(null);
+  });
+
+  buildMap();
+  fit();
+  select(null);
+})();
+</script>
+</body>
+</html>
