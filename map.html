@@ -9,96 +9,103 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; }
-  body { background: #0b1217; color: #d7e9f1; font-family: Arial, sans-serif; overflow: hidden; }
+  body { background: #000; color: #eee; font-family: Arial, sans-serif; overflow: hidden; }
 
   .topbar {
     position: fixed; top: 0; left: 0; right: 0; height: 52px; z-index: 40;
-    background: #0a1115; border-bottom: 1px solid #2d4757;
+    background: #000; border-bottom: 1px solid #444;
     display: flex; align-items: center; padding: 0 1.2rem;
   }
   .topbar .brand { font-family: 'Cinzel', serif; font-weight: 700; letter-spacing: 0.18em; font-size: 1.05rem; }
-  .topbar .brand small { display: block; font-size: 0.55rem; letter-spacing: 0.34em; color: #6f8d9b; font-weight: 500; }
+  .topbar .brand small { display: block; font-size: 0.55rem; letter-spacing: 0.34em; color: #777; font-weight: 500; }
   .topbar nav { margin-left: auto; display: flex; gap: 1.2rem; }
-  .topbar nav a { color: #9fbdc9; text-decoration: none; font-size: 0.8rem; letter-spacing: 0.1em; }
+  .topbar nav a { color: #bbb; text-decoration: none; font-size: 0.8rem; letter-spacing: 0.1em; }
   .topbar nav a:hover { color: #fff; }
 
-  #viewport { position: fixed; inset: 52px 0 0 0; background: #1B2D33; cursor: grab; overflow: hidden;
-    background-image: radial-gradient(ellipse at 50% 40%, #213a44 0%, #1B2D33 55%, #15242b 100%); }
+  #viewport { position: fixed; inset: 52px 0 0 0; background: #000; cursor: grab; overflow: hidden;
+    background-image: radial-gradient(ellipse at 50% 40%, #111 0%, #050505 55%, #000 100%); }
   #viewport.dragging { cursor: grabbing; }
   #map { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
 
-  .land { fill: #20333d; stroke: #3a5666; stroke-width: 2; }
-  .region { fill: rgba(110,175,200,0.13); stroke: #a7c3d0; stroke-width: 1.4; cursor: pointer; }
-  .region:hover { fill: rgba(140,200,225,0.22); }
-  .region.active { fill: rgba(170,225,250,0.34); stroke: #fff; stroke-width: 2; }
-  #map.no-areas .region { fill: transparent; }
-  #map.no-areas .region.active { fill: rgba(170,225,250,0.3); }
+  .land { fill: #0f0f0f; stroke: #3a3a3a; stroke-width: 1.6; }
+  .river { fill: none; stroke: #232323; stroke-width: 0.8; }
+  .wall { fill: none; stroke: var(--c, #e9e9e9); stroke-width: 2.2; stroke-linecap: round; cursor: pointer; }
+
+  .region { fill: rgba(255,255,255,0.08); stroke: #8f8f8f; stroke-width: 1.4; cursor: pointer; }
+  .region[data-claimed] { fill: color-mix(in srgb, var(--c) 30%, transparent); stroke: var(--c); stroke-width: 2; }
+  .region:hover { fill: rgba(255,255,255,0.16); }
+  .region[data-claimed]:hover { fill: color-mix(in srgb, var(--c) 48%, transparent); }
+  .region.active { stroke: #fff; stroke-width: 2.6; }
+  #map.no-areas .region { fill: transparent !important; }
   #map.hide-markers .city, #map.hide-markers .city-label, #map.hide-markers .sight, #map.hide-markers .sight-label { opacity: 0; }
 
-  .region-label { fill: #d7e9f1; font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; letter-spacing: 0.26em; pointer-events: none; }
-  .region-label.small { font-size: 15px; letter-spacing: 0.18em; }
-  .city { fill: #f2f8fb; stroke: #12222b; stroke-width: 1.2; cursor: pointer; }
-  .city:hover { fill: #9fd4ea; }
-  .sight { fill: #5c7786; stroke: #8fb0bf; stroke-width: 1; pointer-events: none; }
-  .city-label, .sight-label { fill: #aac1cc; font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.08em; pointer-events: none; }
+  .region-label { fill: #f2f2f2; font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; letter-spacing: 0.24em; pointer-events: none; }
+  .region-label.small { font-size: 13px; letter-spacing: 0.16em; }
+  .city { fill: #fff; stroke: #000; stroke-width: 1.2; cursor: pointer; }
+  .city.seat { stroke: #000; stroke-width: 1.4; }
+  .city:hover { fill: #888; }
+  .sight { fill: #333; stroke: #777; stroke-width: 1; pointer-events: none; }
+  .city-label, .sight-label { fill: #bbb; font-family: 'Cinzel', serif; font-size: 6.5px; letter-spacing: 0.04em; pointer-events: none; }
+  .city-label.seat-label { fill: #fff; font-size: 6.5px; }
 
   .settings {
     position: fixed; right: 1rem; top: 64px; z-index: 30; width: 250px; max-height: calc(100vh - 80px); overflow: auto;
-    background: rgba(9,15,20,0.95); border: 1px solid #2d4757; padding: 0.9rem 1rem;
+    background: rgba(0,0,0,0.95); border: 1px solid #444; padding: 0.9rem 1rem;
   }
   .settings.collapsed .body { display: none; }
-  .settings h3 { font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.28em; color: #9fbdc9;
+  .settings h3 { font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.28em; color: #bbb;
     text-transform: uppercase; display: flex; align-items: center; }
-  .settings h3 .hide { margin-left: auto; cursor: pointer; font-size: 0.6rem; letter-spacing: 0.2em; color: #6f8d9b; border: 1px solid #2d4757; padding: 0.18rem 0.5rem; }
-  .settings h3 .hide:hover { color: #fff; border-color: #6f8d9b; }
+  .settings h3 .hide { margin-left: auto; cursor: pointer; font-size: 0.6rem; letter-spacing: 0.2em; color: #777; border: 1px solid #444; padding: 0.18rem 0.5rem; }
+  .settings h3 .hide:hover { color: #fff; border-color: #aaa; }
   .settings .body { margin-top: 0.7rem; }
-  .settings label.row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #cfe3ec; padding: 0.25rem 0; cursor: pointer; }
-  .settings input[type=checkbox] { accent-color: #6f9fb2; }
+  .settings label.row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #ddd; padding: 0.25rem 0; cursor: pointer; }
+  .settings input[type=checkbox] { accent-color: #999; }
 
-  .settings .divider { height: 1px; background: #22343d; margin: 0.7rem 0; }
+  .settings .divider { height: 1px; background: #222; margin: 0.7rem 0; }
 
-  .settings h4 { font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.26em; color: #6f8d9b;
+  .settings h4 { font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.26em; color: #777;
     text-transform: uppercase; margin-bottom: 0.4rem; }
   .settings ul.list { list-style: none; }
-  .settings ul.list li { font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.2rem 0; cursor: pointer; color: #cfe3ec; }
+  .settings ul.list li { font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.22rem 0; cursor: pointer; color: #ddd; }
   .settings ul.list li:hover { color: #fff; }
-  .settings ul.list input { accent-color: #6f9fb2; cursor: pointer; }
+  .settings ul.list input { accent-color: #999; cursor: pointer; }
   .settings ul.list li.claimed-b {
-    border: 1px solid #3a5666; padding: 0.45rem 0.55rem; margin: 0.2rem 0; color: #fff;
+    border: 1px solid #555; padding: 0.45rem 0.55rem; margin: 0.2rem 0; color: #fff; cursor: pointer;
   }
-  .settings ul.list li.claimed-b small { display: block; color: #7d9aa8; font-size: 0.68rem; letter-spacing: 0.08em; margin-top: 0.15rem; }
-  .settings ul.list li.open-summary { cursor: default; color: #5c7786; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; padding-top: 0.5rem; border-top: 1px solid #22343d; margin-top: 0.4rem; }
+  .settings ul.list li.claimed-b small { display: block; color: #888; font-size: 0.68rem; letter-spacing: 0.08em; margin-top: 0.15rem; }
+  .settings ul.list li.open-summary { cursor: default; color: #555; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; padding-top: 0.5rem; border-top: 1px solid #222; margin-top: 0.4rem; }
+  .chip { width: 10px; height: 10px; display: inline-block; border: 1px solid #666; flex: none; }
 
-  .settings .coords { font-size: 0.72rem; color: #6f8d9b; font-family: Consolas, monospace; margin-top: 0.6rem; letter-spacing: 0.1em; }
+  .settings .coords { font-size: 0.72rem; color: #777; font-family: Consolas, monospace; margin-top: 0.6rem; letter-spacing: 0.1em; }
+  .settings .attrib { font-size: 0.6rem; color: #555; margin-top: 0.8rem; line-height: 1.4; }
 
   .info-card {
     position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%); z-index: 35;
-    width: 340px; max-width: calc(100vw - 2rem); background: rgba(10,17,22,0.97);
-    border: 1px solid #3a5666; padding: 1rem 1.1rem; display: none;
+    width: 340px; max-width: calc(100vw - 2rem); background: rgba(0,0,0,0.97);
+    border: 1px solid #555; padding: 1rem 1.1rem; display: none;
   }
-  .info-card .close { position: absolute; top: 0.45rem; right: 0.7rem; cursor: pointer; color: #6f8d9b; font-size: 1rem; }
+  .info-card .close { position: absolute; top: 0.45rem; right: 0.7rem; cursor: pointer; color: #777; font-size: 1rem; }
   .info-card .close:hover { color: #fff; }
-  .info-card h2 { font-family: 'Cinzel', serif; font-size: 1.1rem; letter-spacing: 0.12em; }
-  .info-card .region-name { color: #7d9aa8; font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.3em; margin-top: 0.2rem; text-transform: uppercase; }
-  .info-card .words { font-style: italic; color: #d7e9f1; margin: 0.8rem 0; border-left: 2px solid #6f9fb2; padding-left: 0.8rem; }
+  .info-card h2 { font-family: 'Cinzel', serif; font-size: 1.1rem; letter-spacing: 0.12em; display: flex; align-items: center; gap: 0.6rem; }
+  .info-card .region-name { color: #888; font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.3em; margin-top: 0.2rem; text-transform: uppercase; }
+  .info-card .words { font-style: italic; color: #eee; margin: 0.8rem 0; border-left: 2px solid #aaa; padding-left: 0.8rem; }
   .info-card .kv { display: flex; gap: 0.75rem; font-size: 0.78rem; padding: 0.18rem 0; }
-  .info-card .kv b { color: #6f8d9b; font-weight: normal; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.68rem; width: 62px; flex: none; padding-top: 0.1rem; }
-  .info-card .kv span { color: #cfe3ec; }
-  .info-card .status-claimed { color: #7fd1a4; }
-  .info-card .status-open { color: #9fbdc9; }
+  .info-card .kv b { color: #777; font-weight: normal; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.68rem; width: 62px; flex: none; padding-top: 0.1rem; }
+  .info-card .kv span { color: #ddd; }
+  .info-card .status-open { color: #aaa; }
 
   #tooltip {
-    position: fixed; z-index: 50; pointer-events: none; background: rgba(6,10,13,0.95);
-    border: 1px solid #3a5666; color: #d7e9f1; font-size: 0.72rem; letter-spacing: 0.08em;
+    position: fixed; z-index: 50; pointer-events: none; background: #000;
+    border: 1px solid #555; color: #eee; font-size: 0.72rem; letter-spacing: 0.08em;
     padding: 0.3rem 0.6rem; display: none; white-space: nowrap;
   }
 
   .controls { position: fixed; left: 1rem; bottom: 1.2rem; z-index: 30; display: flex; gap: 0.4rem; }
   .controls button {
-    background: rgba(9,15,20,0.95); border: 1px solid #2d4757; color: #cfe3ec;
+    background: #000; border: 1px solid #444; color: #ddd;
     width: 2.1rem; height: 2.1rem; font-size: 1.1rem; cursor: pointer; line-height: 1;
   }
-  .controls button:hover { border-color: #6f9fb2; color: #fff; }
+  .controls button:hover { border-color: #aaa; color: #fff; }
   .controls .reset { width: auto; font-size: 0.68rem; letter-spacing: 0.14em; padding: 0 0.8rem; }
 
   @media (max-width: 760px) {
@@ -137,15 +144,17 @@
       <h4>Current Houses</h4>
       <ul class="list" id="houses"></ul>
 
+      <div class="attrib">Basemap: cadaei &middot; theMountainGoat &middot; Tear (CC BY-NC-SA 3.0)</div>
       <div class="coords" id="coords">x: &mdash; &nbsp; y: &mdash;</div>
     </div>
   </aside>
 
   <div class="info-card" id="info">
     <span class="close" id="infoClose">&times;</span>
-    <h2 id="p-name"></h2>
+    <h2><span class="chip" id="p-chip" style="border-color:#666;"></span><span id="p-name"></span></h2>
     <div class="region-name" id="p-region"></div>
     <div class="words" id="p-words"></div>
+    <div class="kv"><b>Seat</b><span id="p-seat"></span></div>
     <div class="kv"><b>Sigil</b><span id="p-sigil"></span></div>
     <div class="kv"><b>Leader</b><span id="p-leader"></span></div>
     <div class="kv"><b>Status</b><span id="p-status"></span></div>
@@ -160,42 +169,38 @@
     <button id="reset" class="reset" title="Reset view">RESET</button>
   </div>
 
+<script src="mapdata.js"></script>
 <script>
 (function () {
-  var REGIONS = [
-    { key: 'north',      name: 'THE NORTH',       label: 'North',      compact: false, labelPos: [400, 255],
-      path: 'M185,60 L420,45 L680,60 L785,110 L800,200 L775,270 L730,310 L640,330 L520,345 L400,330 L300,315 L230,272 L178,200 L175,120 Z',
-      city: 'The Ice Wall', cityPos: [430, 120], cityOf: 'north',
-      extra: [{ name: 'Winterfell', pos: [470, 210] }] },
-    { key: 'iron',       name: 'THE IRON ISLANDS',label: 'Iron Is.',    compact: true, labelPos: [110, 352],
-      path: 'M95,315 L70,350 L98,392 L150,375 L160,330 L135,300 Z',
-      city: 'Pyke', cityPos: [112, 336], cityOf: 'iron' },
-    { key: 'west',       name: 'THE WESTERLANDS', label: 'Westerlands', compact: false, labelPos: [130, 520],
-      path: 'M135,410 L100,468 L118,545 L188,580 L232,525 L205,460 L175,422 Z',
-      city: 'Casterly Rock', cityPos: [165, 500], cityOf: 'west' },
-    { key: 'river',      name: 'THE RIVERLANDS',  label: 'Riverlands',  compact: false, labelPos: [480, 320],
-      path: 'M235,348 L340,340 L465,352 L590,352 L705,345 L735,395 L690,455 L585,470 L465,465 L340,475 L245,390 Z',
-      city: 'Riverrun', cityPos: [390, 400], cityOf: 'river' },
-    { key: 'vale',       name: 'THE VALE',        label: 'Vale',        compact: false, labelPos: [775, 320],
-      path: 'M700,292 L810,262 L845,320 L860,395 L810,452 L742,462 L700,420 L685,360 Z',
-      city: 'The Eyrie', cityPos: [775, 355], cityOf: 'vale' },
-    { key: 'crown',      name: 'THE CROWNLANDS',  label: 'Crownlands',  compact: true, labelPos: [505, 395],
-      path: 'M395,442 L380,400 L455,362 L580,352 L640,382 L635,440 L575,468 L475,470 L415,458 Z',
-      city: 'King\u2019s Landing', cityPos: [510, 415], cityOf: 'crown' },
-    { key: 'reach',      name: 'THE REACH',       label: 'Reach',       compact: false, labelPos: [420, 515],
-      path: 'M200,480 L420,472 L620,485 L680,535 L640,600 L560,655 L430,665 L280,655 L200,595 Z',
-      city: 'Highgarden', cityPos: [430, 570], cityOf: 'reach' },
-    { key: 'storm',      name: 'THE STORMLANDS',  label: 'Stormlands',  compact: true, labelPos: [680, 475],
-      path: 'M610,442 L700,425 L768,462 L790,535 L745,595 L682,615 L618,575 L598,505 Z',
-      city: 'Storm\u2019s End', cityPos: [695, 525], cityOf: 'storm' },
-    { key: 'dorne',      name: 'DORNE',           label: 'Dorne',       compact: false, labelPos: [480, 795],
-      path: 'M265,655 L440,675 L620,658 L700,695 L662,780 L520,830 L380,822 L285,778 L245,720 Z',
-      city: 'Sunspear', cityPos: [505, 755], cityOf: 'dorne' }
-  ];
+  var MD = window.MAPDATA;
+
+  var KEYS = ['north', 'iron', 'west', 'river', 'vale', 'crown', 'reach', 'storm', 'dorne'];
+  var META = {
+    north: { name: 'THE NORTH',       label: 'North',      compact: false },
+    iron:  { name: 'THE IRON ISLANDS',label: 'Iron Is.',    compact: true  },
+    west:  { name: 'THE WESTERLANDS', label: 'Westerlands', compact: false },
+    river: { name: 'THE RIVERLANDS',  label: 'Riverlands',  compact: false },
+    vale:  { name: 'THE VALE',        label: 'Vale',        compact: false },
+    crown: { name: 'THE CROWNLANDS',  label: 'Crownlands',  compact: true  },
+    reach: { name: 'THE REACH',       label: 'Reach',       compact: false },
+    storm: { name: 'THE STORMLANDS',  label: 'Stormlands',  compact: true  },
+    dorne: { name: 'DORNE',           label: 'Dorne',       compact: false }
+  };
+  var CITY_NAME = {
+    north: 'Winterfell', iron: 'Pyke', west: 'Casterly Rock', river: 'Riverrun', vale: 'The Eyrie',
+    crown: 'King\u2019s Landing', reach: 'Highgarden', storm: 'Storm\u2019s End', dorne: 'Sunspear'
+  };
 
   var HOUSES = {
-    north: { name: 'House Blackrime', sigil: 'TBD', words: 'The Dark Yields to Us', leader: '\u2014', status: 'claimed',
-      note: 'Lords of the Ice Wall. Current Lord Paramount \u2014 at war with House Lunaire, King of the Crownlands and Lord of the Vale.' }
+    wall: { name: 'House Blackrime', sigil: 'TBD', words: 'The Dark Yields to Us', leader: '\u2014', status: 'claimed',
+      color: '#a8a8a8',
+      note: 'House Blackrime holds only The Ice Wall \u2014 nothing more. Current Lord Paramount \u2014 at war with House Lunaire, King of the Crownlands and Lord of the Vale.' },
+    vale: { name: 'House Lunaire', sigil: 'TBD', words: 'Honor Above All', leader: 'King of the Crownlands', status: 'claimed',
+      color: '#db7bff',
+      note: 'House Lunaire is King of the Crownlands and overlord of the Vale.' },
+    crown: { name: 'House Lunaire', sigil: 'TBD', words: 'Honor Above All', leader: 'King of the Crownlands', status: 'claimed',
+      color: '#db7bff',
+      note: 'House Lunaire rules the Crownlands from King\u2019s Landing.' }
   };
 
   function houseFor(key) {
@@ -203,17 +208,15 @@
     if (h && h.status === 'claimed') return h;
     return null;
   }
-  function regionFor(key) {
-    for (var i = 0; i < REGIONS.length; i++) if (REGIONS[i].key === key) return REGIONS[i];
-    return null;
-  }
-
-  var land = 'M185,60 L420,45 L680,60 L785,110 L800,200 L775,270 L730,310 L700,292 L810,262 L845,320 L860,395 L810,452 L742,462 L700,420 L768,462 L790,535 L745,595 L682,615 L618,575 L598,505 L640,382 L580,352 L455,362 L380,400 L340,475 L245,390 L200,480 L280,655 L285,778 L380,822 L520,830 L662,780 L700,695 L640,600 L560,655 L430,665 L200,595 L210,92 L120,180 L95,315 L150,375 L160,330 L135,300 L115,318 L88,260 L130,150 Z';
 
   var svg = document.getElementById('map');
   var viewport = document.getElementById('viewport');
   var view = { scale: 1, tx: 0, ty: 0 };
   var active = null;
+  var SEATS = {};
+  var REGIONS = [];
+
+  var DATA_BOUNDS = MD.bounds || { x0: 60, y0: 60, x1: 320, y1: 840 };
 
   function applyView() {
     svg.style.transform = 'translate(' + view.tx + 'px,' + view.ty + 'px) scale(' + view.scale + ')';
@@ -221,16 +224,17 @@
 
   function fit() {
     var w = viewport.clientWidth, h = viewport.clientHeight;
-    view.scale = Math.min(w / 1000, h / 900) * 0.92;
-    view.tx = (w - 1000 * view.scale) / 2;
-    view.ty = (h - 900 * view.scale) / 2;
+    var dx = DATA_BOUNDS.x1 - DATA_BOUNDS.x0, dy = DATA_BOUNDS.y1 - DATA_BOUNDS.y0;
+    view.scale = Math.min(w / dx, h / dy) * 0.94;
+    view.tx = (w - (DATA_BOUNDS.x0 + DATA_BOUNDS.x1) * view.scale) / 2;
+    view.ty = (h - (DATA_BOUNDS.y0 + DATA_BOUNDS.y1) * view.scale) / 2;
     applyView();
   }
 
   function zoomAt(mx, my, factor) {
     var px = (mx - view.tx) / view.scale;
     var py = (my - view.ty) / view.scale;
-    view.scale = Math.min(8, Math.max(1, view.scale * factor));
+    view.scale = Math.min(10, Math.max(1, view.scale * factor));
     view.tx = mx - px * view.scale;
     view.ty = my - py * view.scale;
     applyView();
@@ -238,7 +242,7 @@
 
   function zoomTo(wx, wy) {
     var w = viewport.clientWidth, h = viewport.clientHeight;
-    view.scale = Math.max(view.scale, 2.4);
+    view.scale = Math.max(view.scale, 2.6);
     view.tx = w / 2 - wx * view.scale;
     view.ty = h / 2 - wy * view.scale;
     applyView();
@@ -253,33 +257,73 @@
     showInfo(key);
   }
 
+  function regionByKey(key) {
+    for (var i = 0; i < REGIONS.length; i++) if (REGIONS[i].key === key) return REGIONS[i];
+    return null;
+  }
+
   function showInfo(key) {
-    var h = houseFor(key), r = regionFor(key);
+    var h = (key === 'wall') ? HOUSES.wall : houseFor(key);
+    var r = regionByKey(key === 'wall' ? 'north' : key);
     var card = document.getElementById('info');
+    var chip = document.getElementById('p-chip');
     document.getElementById('p-name').textContent = h ? h.name : r.name + ' \u2014 Open Lands';
+    chip.style.display = h ? 'inline-block' : 'inline-block';
+    chip.style.background = h ? h.color : 'transparent';
+    chip.style.borderColor = h ? h.color : '#666';
     document.getElementById('p-region').textContent = r.name;
     document.getElementById('p-words').textContent = h ? '\u201C' + h.words + '\u201D' : 'No house holds this land yet.';
+    document.getElementById('p-seat').textContent = key === 'wall' ? 'The Ice Wall' : r.city;
     document.getElementById('p-sigil').textContent = h ? h.sigil : '\u2014';
     document.getElementById('p-leader').textContent = h ? (h.leader === 'Open' ? 'Open' : h.leader) : 'Open';
     var st = document.getElementById('p-status');
     st.textContent = h ? 'Claimed' : 'Open';
-    st.className = h ? 'status-claimed' : 'status-open';
+    st.className = h ? '' : 'status-open';
+    st.style.color = h ? h.color : '';
     document.getElementById('p-note').textContent = h ? h.note : 'Open for claim. Declare your house and take this land.';
     card.style.display = 'block';
   }
 
   function buildMap() {
     var ns = 'http://www.w3.org/2000/svg';
+
     var landEl = document.createElementNS(ns, 'path');
-    landEl.setAttribute('d', land);
+    landEl.setAttribute('d', MD.land);
     landEl.setAttribute('class', 'land');
     svg.appendChild(landEl);
 
-    REGIONS.forEach(function (r) {
+    var rivEl = document.createElementNS(ns, 'path');
+    rivEl.setAttribute('d', MD.rivers);
+    rivEl.setAttribute('class', 'river');
+    svg.appendChild(rivEl);
+
+    KEYS.forEach(function (key) {
+      var m = META[key];
+      var r = {
+        key: key, name: m.name, label: m.label, compact: m.compact,
+        path: MD.regions[key],
+        labelPos: MD.labels[key],
+        city: CITY_NAME[key]
+      };
+      var h = houseFor(key);
+
+      var seat = MD.cities[key] || MD.labels[key];
+      r.cityPos = seat;
+      SEATS[key] = seat;
+
+      REGIONS.push(r);
+
       var p = document.createElementNS(ns, 'path');
       p.setAttribute('d', r.path);
       p.setAttribute('class', 'region');
-      p.setAttribute('data-key', r.key);
+      p.setAttribute('data-key', key);
+      if (h) {
+        p.setAttribute('data-claimed', '1');
+        p.style.setProperty('--c', h.color);
+        p.setAttribute('data-tip', h.name + ' \u00B7 ' + r.name);
+      } else {
+        p.setAttribute('data-tip', r.name + ' \u00B7 Open');
+      }
       svg.appendChild(p);
 
       var t = document.createElementNS(ns, 'text');
@@ -287,34 +331,36 @@
       t.setAttribute('y', r.labelPos[1]);
       t.textContent = r.label;
       t.setAttribute('class', r.compact ? 'region-label small' : 'region-label');
-      t.setAttribute('data-key', r.key);
+      t.setAttribute('data-key', key);
       svg.appendChild(t);
 
-      var h = houseFor(r.key);
       var c = document.createElementNS(ns, 'circle');
-      c.setAttribute('cx', r.cityPos[0]);
-      c.setAttribute('cy', r.cityPos[1]);
+      c.setAttribute('cx', seat[0]);
+      c.setAttribute('cy', seat[1]);
       c.setAttribute('r', 4.5);
       c.setAttribute('class', 'city');
-      c.setAttribute('data-key', r.key);
+      c.setAttribute('data-key', key);
       c.setAttribute('data-tip', r.city + (h ? ' \u00B7 ' + h.name : ''));
       svg.appendChild(c);
 
       var cl = document.createElementNS(ns, 'text');
-      cl.setAttribute('x', r.cityPos[0] + 8);
-      cl.setAttribute('y', r.cityPos[1] + 4);
+      cl.setAttribute('x', seat[0] + 8);
+      cl.setAttribute('y', seat[1] + 4);
       cl.setAttribute('class', 'city-label');
       cl.textContent = r.city;
-      cl.setAttribute('data-key', r.key);
+      cl.setAttribute('data-key', key);
       svg.appendChild(cl);
 
-      if (r.extra) r.extra.forEach(function (ex) {
+      var sights = MD.sights[key] || [];
+      for (var si = 0; si < sights.length && si < 3; si++) {
+        var ex = sights[si];
+        if (ex.name === r.city) continue;
         var ec = document.createElementNS(ns, 'circle');
         ec.setAttribute('cx', ex.pos[0]);
         ec.setAttribute('cy', ex.pos[1]);
         ec.setAttribute('r', 3);
         ec.setAttribute('class', 'sight');
-        ec.setAttribute('data-key', r.key);
+        ec.setAttribute('data-key', key);
         ec.setAttribute('data-tip', ex.name);
         svg.appendChild(ec);
         var el = document.createElementNS(ns, 'text');
@@ -322,20 +368,51 @@
         el.setAttribute('y', ex.pos[1] + 3);
         el.setAttribute('class', 'sight-label');
         el.textContent = ex.name;
-        el.setAttribute('data-key', r.key);
+        el.setAttribute('data-key', key);
         svg.appendChild(el);
-      });
-
-      p.setAttribute('data-tip', h ? h.name + ' \u00B7 ' + r.name : r.name + ' \u00B7 Open');
+      }
     });
 
+    var wh = HOUSES['wall'];
+    var wallSeat = findSight('Castle Black') || MD.cities.north;
+
+    var wp = document.createElementNS(ns, 'path');
+    wp.setAttribute('d', MD.wall);
+    wp.setAttribute('class', 'wall');
+    wp.setAttribute('data-key', 'wall');
+    wp.setAttribute('data-claimed', '1');
+    wp.style.setProperty('--c', wh.color);
+    wp.setAttribute('data-tip', 'The Ice Wall \u00B7 House Blackrime');
+    svg.appendChild(wp);
+
+    var ws = document.createElementNS(ns, 'circle');
+    ws.setAttribute('cx', wallSeat[0]);
+    ws.setAttribute('cy', wallSeat[1]);
+    ws.setAttribute('r', 3.5);
+    ws.setAttribute('class', 'city seat');
+    ws.setAttribute('data-key', 'wall');
+    ws.setAttribute('data-tip', 'The Ice Wall \u00B7 House Blackrime');
+    ws.style.fill = wh.color;
+    svg.appendChild(ws);
+
+    var wl = document.createElementNS(ns, 'text');
+    wl.setAttribute('x', wallSeat[0] + 14);
+    wl.setAttribute('y', wallSeat[1] + 5);
+    wl.setAttribute('class', 'city-label seat-label');
+    wl.textContent = 'The Ice Wall';
+    wl.setAttribute('data-key', 'wall');
+    wl.style.fill = wh.color;
+    svg.appendChild(wl);
+
+    SEATS['wall'] = wallSeat;
+
     var list = document.getElementById('list');
-    REGIONS.concat([{ key: 'wall', label: 'The Wall', pos: [430, 120] }]).forEach(function (r) {
+    KEYS.concat([{ key: 'wall', label: 'The Wall', pos: wallSeat }]).forEach(function (r) {
       var li = document.createElement('li');
       li.innerHTML = '<input type="checkbox" checked data-vis="' + r.key + '"><span>' + r.label + '</span>';
       li.addEventListener('click', function (e) {
         if (e.target.tagName === 'INPUT') return;
-        if (r.key === 'wall') { select('north'); zoomTo(430, 120); }
+        if (r.key === 'wall') { select('wall'); zoomTo(wallSeat[0], wallSeat[1]); }
         else { select(r.key); zoomTo(r.labelPos[0], r.labelPos[1]); }
       });
       list.appendChild(li);
@@ -350,17 +427,27 @@
     });
 
     var houses = document.getElementById('houses');
-    REGIONS.forEach(function (r) {
-      var h = houseFor(r.key);
-      if (h) {
-        var li = document.createElement('li');
-        li.className = 'claimed-b';
-        li.innerHTML = '<span>' + h.name + '</span><small>Claims ' + r.label + ' &middot; ' + r.city + '</small>';
-        li.addEventListener('click', function () { select(r.key); zoomTo(r.labelPos[0], r.labelPos[1]); });
-        houses.appendChild(li);
-      }
+    var shown = {};
+    Object.keys(HOUSES).forEach(function (key) {
+      var h = HOUSES[key];
+      var r = regionByKey(key === 'wall' ? 'north' : key);
+      if (shown[h.name]) return;
+      shown[h.name] = true;
+      var claimKeys = Object.keys(HOUSES).filter(function (k) { return HOUSES[k].name === h.name; });
+      var claimLabels = claimKeys.map(function (k) { return k === 'wall' ? 'The Ice Wall' : regionByKey(k).label; });
+      var li = document.createElement('li');
+      li.className = 'claimed-b';
+      li.style.borderColor = h.color;
+      li.innerHTML = '<span class="chip" style="background:' + h.color + ';border-color:' + h.color + ';"></span><span>' +
+        h.name + '</span><small>Claims ' + claimLabels.join(', ') + '</small>';
+      li.addEventListener('click', function () {
+        var fx = claimKeys[0] === 'wall' ? wallSeat : regionByKey(claimKeys[0]).labelPos;
+        select(claimKeys[0]);
+        zoomTo(fx[0], fx[1]);
+      });
+      houses.appendChild(li);
     });
-    var open = REGIONS.filter(function (x) { return !houseFor(x.key); }).length;
+    var open = KEYS.filter(function (x) { return !houseFor(x); }).length;
     var sum = document.createElement('li');
     sum.className = 'open-summary';
     sum.textContent = open + ' region' + (open === 1 ? '' : 's') + ' open for claim';
@@ -370,6 +457,12 @@
     areas.addEventListener('change', function () { svg.classList.toggle('no-areas', !areas.checked); });
     var marks = document.getElementById('toggleMarkers');
     marks.addEventListener('change', function () { svg.classList.toggle('hide-markers', marks.checked); });
+  }
+
+  function findSight(name) {
+    var s = MD.sights.north || [];
+    for (var i = 0; i < s.length; i++) if (s[i].name === name) return s[i].pos;
+    return null;
   }
 
   var tooltip = document.getElementById('tooltip');
@@ -410,7 +503,7 @@
   var dragging = false, start = null, suppressClick = false;
 
   viewport.addEventListener('pointerdown', function (e) {
-    if (e.target.closest && e.target.closest('.region, .city, .sight')) return;
+    if (e.target.closest && e.target.closest('.region, .city, .sight, .wall')) return;
     if (e.button !== 0) return;
     dragging = true; viewport.classList.add('dragging');
     tooltip.style.display = 'none';
@@ -456,7 +549,7 @@
 
   buildMap();
   fit();
-  select('north');
+  select('wall');
 })();
 </script>
 </body>
