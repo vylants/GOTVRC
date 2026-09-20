@@ -406,6 +406,11 @@ nav.strip li.active a {
   border-bottom: 1px dashed var(--line-light);
 }
 .rules ol li:last-child { border-bottom: none; }
+.rules ol ul {
+  list-style: disc;
+  margin: 0.5rem 0 0 1.7rem;
+}
+.rules ol ul li { padding: 0.22rem 0; border-bottom: none; }
 .rules ol li::before {
   content: counter(rule);
   position: absolute;
@@ -509,6 +514,30 @@ form.app {
 .form-result { margin-top: 1.2rem; padding: 1rem 1.2rem; display: none; }
 .form-result.ok { display: block; border: 1px solid var(--gold); background: rgba(168, 177, 186, 0.08); }
 .form-result.err { display: block; border: 1px solid var(--crimson-bright); background: rgba(58, 63, 71, 0.18); color: #dfe4ea; }
+
+/* ---------- FAQ ---------- */
+.faq .qa {
+  padding: 1rem 0;
+  border-bottom: 1px dashed var(--line-light);
+}
+.faq .qa:last-child { border-bottom: none; }
+.faq .qa .q {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.06em;
+  color: var(--gold-bright);
+  margin-bottom: 0.45rem;
+}
+.faq .qa .q::before { content: 'Q: '; color: var(--gold-dim); }
+.faq .qa p { font-size: 0.95rem; }
+.faq .qa .note {
+  margin-top: 0.5rem;
+  font-style: italic;
+  color: var(--silver);
+  border-left: 2px solid var(--gold-dim);
+  padding-left: 0.9rem;
+}
 
 /* ---------- Divider ---------- */
 .ornament {
