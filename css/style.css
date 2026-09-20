@@ -399,19 +399,19 @@ nav.strip li.active a {
 
 /* ---------- Lists ---------- */
 .rules ol { counter-reset: rule; list-style: none; }
-.rules ol li {
+.rules ol > li {
   counter-increment: rule;
   position: relative;
   padding: 0.85rem 0 0.85rem 3rem;
   border-bottom: 1px dashed var(--line-light);
 }
-.rules ol li:last-child { border-bottom: none; }
+.rules ol > li:last-child { border-bottom: none; }
 .rules ol ul {
   list-style: disc;
   margin: 0.5rem 0 0 1.7rem;
 }
 .rules ol ul li { padding: 0.22rem 0; border-bottom: none; }
-.rules ol li::before {
+.rules ol > li::before {
   content: counter(rule);
   position: absolute;
   left: 0;
