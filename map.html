@@ -46,6 +46,7 @@
 
   .city { fill: #fff; stroke: #000; stroke-width: 1; cursor: pointer; }
   .city:hover { fill: #aaa; }
+  .sight { fill: #666; stroke: #999; stroke-width: 1; pointer-events: none; }
   .city-label { fill: #cfcfcf; font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.08em; pointer-events: none; }
 
   .region-label { fill: #e8e8e8; font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; letter-spacing: 0.28em; pointer-events: none; }
@@ -71,13 +72,11 @@
   }
   .legend h3 { font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.24em; color: #aaa; margin-bottom: 0.6rem; text-transform: uppercase; }
   .legend ul { list-style: none; }
-  .legend li {
-    display: flex; align-items: center; gap: 0.6rem;
-    padding: 0.32rem 0.4rem; cursor: pointer; border: 1px solid transparent;
-    font-size: 0.92rem;
-  }
+  .legend li { margin: 0 -0.5rem; padding: 0.32rem 0.5rem; cursor: pointer; border: 1px solid transparent; }
   .legend li:hover { background: rgba(255,255,255,0.08); }
   .legend li.active { border-color: rgba(255,255,255,0.6); }
+  .legend li.open-summary { cursor: default; color: #666; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
+    border: none; border-top: 1px solid #2b2b2b; margin: 0.4rem -0.5rem 0; padding: 0.7rem 0.5rem 0; }
   .legend .dot { width: 12px; height: 12px; border: 1px solid #fff; flex: 0 0 auto; }
   .legend .st { margin-left: auto; font-size: 0.62rem; letter-spacing: 0.18em; color: #999; text-transform: uppercase; }
 
@@ -153,7 +152,8 @@
   var REGIONS = [
     { key: 'north',      name: 'THE NORTH',       label: 'North',      compact: false, labelPos: [400, 255],
       path: 'M185,60 L420,45 L680,60 L785,110 L800,200 L775,270 L730,310 L640,330 L520,345 L400,330 L300,315 L230,272 L178,200 L175,120 Z',
-      city: 'Winterfell', cityPos: [470, 210], cityOf: 'north' },
+      city: 'The Ice Wall', cityPos: [430, 120], cityOf: 'north',
+      extra: [{ name: 'Winterfell', pos: [470, 210] }] },
     { key: 'iron',       name: 'THE IRON ISLANDS',label: 'Iron Is.',    compact: true, labelPos: [110, 352],
       path: 'M95,315 L70,350 L98,392 L150,375 L160,330 L135,300 Z',
       city: 'Pyke', cityPos: [112, 336], cityOf: 'iron' },
@@ -181,16 +181,15 @@
   ];
 
   var HOUSES = {
-    north: { name: 'House Stark',     sigil: 'Direwolf',    words: 'Winter Is Coming',                leader: 'Open',        status: 'claimed', note: 'Wardens of the North.' },
-    iron:  { name: 'House Greyjoy',   sigil: 'Kraken',      words: 'We Do Not Sow',                   leader: 'Open',        status: 'claimed', note: 'Lords of the Iron Islands.' },
-    west:  { name: 'House Lannister', sigil: 'Lion',        words: 'Hear Me Roar!',                  leader: 'Open',        status: 'claimed', note: 'The Rock. Wealth of the realm.' },
-    river: { name: 'House Tully',     sigil: 'Trout',       words: 'Family, Duty, Honor',             leader: 'Open',        status: 'claimed', note: 'Lords of the Trident.' },
-    vale:  { name: 'House Arryn',     sigil: 'Falcon',      words: 'As High as Honor',                leader: 'Open',        status: 'claimed', note: 'Knights of the Vale.' },
-    crown: { name: 'The Crown',       sigil: 'Dragon',      words: 'Fire and Blood',                  leader: 'Open',        status: 'claimed', note: 'Seat of the Iron Throne.' },
-    reach: { name: 'House Tyrell',    sigil: 'Rose',        words: 'Growing Strong',                  leader: 'Open',        status: 'claimed', note: 'The Reach — never in want.' },
-    storm: { name: 'House Baratheon', sigil: 'Stag',        words: 'Ours Is the Fury',                leader: 'Open',        status: 'claimed', note: 'Lords of Storm\u2019s End.' },
-    dorne: { name: 'House Martell',   sigil: 'Sun Spear',   words: 'Unbowed, Unbent, Unbroken',       leader: 'Open',        status: 'claimed', note: 'Princes of Dorne.' }
+    north: { name: 'House Blackrime', sigil: 'TBD', words: 'The Dark Yields to Us', leader: '—', status: 'claimed',
+      note: 'Lords of the Ice Wall. Current Lord Paramount — at war with House Lunaire, King of the Crownlands and Lord of the Vale.' }
   };
+
+  function houseFor(key) {
+    var h = HOUSES[key];
+    if (h && h.status === 'claimed') return h;
+    return null;
+  }
 
   var land = 'M185,60 L420,45 L680,60 L785,110 L800,200 L775,270 L730,310 L700,292 L810,262 L845,320 L860,395 L810,452 L742,462 L700,420 L768,462 L790,535 L745,595 L682,615 L618,575 L598,505 L640,382 L580,352 L455,362 L380,400 L340,475 L245,390 L200,480 L280,655 L285,778 L380,822 L520,830 L662,780 L700,695 L640,600 L560,655 L430,665 L200,595 L210,92 L120,180 L95,315 L150,375 L160,330 L135,300 L115,318 L88,260 L130,150 Z';
 
@@ -242,17 +241,17 @@
   }
 
   function showPanel(key) {
-    var h = HOUSES[key], r = REGIONS.filter(function (x) { return x.key === key; })[0];
+    var h = houseFor(key), r = REGIONS.filter(function (x) { return x.key === key; })[0];
     var body = document.getElementById('panel-body');
-    document.getElementById('p-name').textContent = h.name;
+    document.getElementById('p-name').textContent = h ? h.name : 'Open Lands';
     document.getElementById('p-region').textContent = r.name;
-    document.getElementById('p-words').textContent = '\u201C' + h.words + '\u201D';
-    document.getElementById('p-sigil').textContent = h.sigil;
-    document.getElementById('p-leader').textContent = h.leader === 'Open' ? 'Open' : h.leader;
+    document.getElementById('p-words').textContent = h ? '\u201C' + h.words + '\u201D' : 'No house holds this land yet.';
+    document.getElementById('p-sigil').textContent = h ? h.sigil : '\u2014';
+    document.getElementById('p-leader').textContent = h ? (h.leader === 'Open' ? 'Open' : h.leader) : 'Open';
     var st = document.getElementById('p-status');
-    st.textContent = h.status === 'claimed' ? 'Claimed' : 'Open';
-    st.className = h.status === 'claimed' ? 'status-claimed' : 'status-open';
-    document.getElementById('p-note').textContent = h.note;
+    st.textContent = h ? 'Claimed' : 'Open';
+    st.className = h ? 'status-claimed' : 'status-open';
+    document.getElementById('p-note').textContent = h ? h.note : 'Open for claim. Declare your house and take this land.';
     document.getElementById('panel-empty').style.display = 'none';
     body.style.display = 'block';
   }
@@ -293,10 +292,27 @@
       cl.textContent = r.city;
       svg.appendChild(cl);
 
+      if (r.extra) r.extra.forEach(function (ex) {
+        var ec = document.createElementNS(ns, 'circle');
+        ec.setAttribute('cx', ex.pos[0]);
+        ec.setAttribute('cy', ex.pos[1]);
+        ec.setAttribute('r', 3);
+        ec.setAttribute('class', 'sight');
+        svg.appendChild(ec);
+        var el = document.createElementNS(ns, 'text');
+        el.setAttribute('x', ex.pos[0] + 7);
+        el.setAttribute('y', ex.pos[1] + 3);
+        el.setAttribute('class', 'city-label');
+        el.textContent = ex.name;
+        svg.appendChild(el);
+      });
+
+      var h = houseFor(r.key);
+      if (!h) return;
+
       var leg = document.createElement('li');
       leg.setAttribute('data-key', r.key);
-      leg.innerHTML = '<span class="dot"></span><span>' + HOUSES[r.key].name + '</span><span class="st">' +
-        (HOUSES[r.key].status === 'claimed' ? 'Claims' : 'Open') + '</span>';
+      leg.innerHTML = '<span class="dot"></span><span>' + h.name + '</span><span class="st">Claims ' + r.label + '</span>';
       leg.addEventListener('click', function () {
         select(r.key);
         var w = viewport.clientWidth, h = viewport.clientHeight;
@@ -308,6 +324,12 @@
       });
       document.getElementById('legend').appendChild(leg);
     });
+
+    var open = REGIONS.filter(function (x) { return !houseFor(x.key); }).length;
+    var sum = document.createElement('li');
+    sum.className = 'open-summary';
+    sum.textContent = open + ' region' + (open === 1 ? '' : 's') + ' open for claim';
+    document.getElementById('legend').appendChild(sum);
   }
 
   window.addEventListener('resize', fit);
