@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 512px; height: 512px; overflow: hidden; }
+  body {
+    font-family: 'Cinzel', serif;
+    color: #eef2f6;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(120% 130% at 50% 8%, #1c1e23 0%, #101216 42%, #07080a 100%);
+  }
+  .vignette { position: absolute; inset: 0; background: radial-gradient(90% 80% at 50% 45%, rgba(0,0,0,0) 34%, rgba(0,0,0,0.6) 100%); }
+  .frame { position: absolute; inset: 16px; border: 2px solid #a8b1ba; }
+  .frame:before { content: ''; position: absolute; inset: 7px; border: 1px solid rgba(238,242,246,0.4); }
+  .corner { position: absolute; width: 14px; height: 14px; border: 2px solid #eef2f6; transform: rotate(45deg); }
+  .tl { top: 9px; left: 9px; }
+  .tr { top: 9px; right: 9px; }
+  .bl { bottom: 9px; left: 9px; }
+  .br { bottom: 9px; right: 9px; }
+  .center { position: relative; text-align: center; transform: translateY(-6px); }
+  .flame {
+    display: block;
+    margin: 0 auto 22px;
+    width: 210px;
+    filter: invert(1) drop-shadow(0 8px 18px rgba(0,0,0,0.6)) drop-shadow(0 0 26px rgba(168,177,186,0.26));
+  }
+  .vrh {
+    font-weight: 900;
+    font-size: 60px;
+    letter-spacing: 0.18em;
+    line-height: 1;
+    text-indent: 0.18em;
+    background: linear-gradient(180deg, #ffffff 0%, #d5dbe1 48%, #8d98a3 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .name { margin-top: 14px; font-size: 17px; letter-spacing: 0.26em; color: #9aa4ad; text-indent: 0.26em; }
+</style>
+</head>
+<body>
+  <div class="vignette"></div>
+  <div class="frame"></div>
+  <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+
+  <div class="center">
+    <img class="flame" src="motto.png" alt="The Dark Yields to Us">
+    <div class="vrh">VRH</div>
+    <div class="name">THE SEVEN KINGDOMS</div>
+  </div>
+</body>
+</html>

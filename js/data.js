@@ -1,7 +1,7 @@
 var SITE = {
   name: 'The Seven Kingdoms',
   short: 'A Game of Thrones Roleplay',
-  tagline: 'We Do Not Sow',
+  tagline: 'The Dark Yields to Us',
   discord: 'https://discord.gg/2j9Zs5wPbV',
   era: 'The Long Night looms. The Iron Throne waits.'
 };
@@ -129,8 +129,8 @@ function sigilSvg(house, uid) {
     '</defs>' +
     '<g filter="url(#sh-' + id + ')">' +
     '<path d="' + SHIELD + '" fill="url(#' + id + ')"/>' +
-    '<path d="' + SHIELD + '" fill="none" stroke="#c9a227" stroke-width="3"/>' +
-    '<path d="' + SHIELD + '" fill="none" stroke="#e6c15c" stroke-width="1" opacity="0.5" transform="translate(60 70) scale(0.88) translate(-60 -70)"/>' +
+    '<path d="' + SHIELD + '" fill="none" stroke="#a8b1ba" stroke-width="3"/>' +
+    '<path d="' + SHIELD + '" fill="none" stroke="#eef2f6" stroke-width="1" opacity="0.5" transform="translate(60 70) scale(0.88) translate(-60 -70)"/>' +
     '<g transform="translate(60 82) scale(0.95) translate(-50 -50)">' + device + '</g>' +
     '</g></svg>';
 }
