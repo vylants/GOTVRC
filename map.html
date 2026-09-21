@@ -43,6 +43,8 @@
   .region-label.small { font-size: 7px; letter-spacing: 0.1em; }
   .region-label.west { font-size: 6px; letter-spacing: 0.08em; }
   .region-label.river { font-size: 6px; letter-spacing: 0.06em; }
+  .region-label.storm { font-size: 6px; letter-spacing: 0.08em; }
+  .region-label.iron { font-size: 6px; letter-spacing: 0.08em; }
   .city { fill: #fff; stroke: #000; stroke-width: 1.2; cursor: pointer; }
   .city.seat { stroke: #000; stroke-width: 1.4; }
   .city:hover { fill: #888; }
@@ -52,6 +54,8 @@
   .army.selected { stroke: #fff; stroke-width: 1.4; }
   .city-label, .sight-label { fill: #bbb; font-family: 'Cinzel', serif; font-size: 5px; letter-spacing: 0.02em; pointer-events: none; paint-order: stroke; stroke: rgba(0, 0, 0, 0.85); stroke-width: 1px; }
   .city-label.seat-label { fill: #fff; font-size: 7px; }
+  .city-label.seat-label.wall-seat { font-size: 5px; }
+  .sight-label.tiny-label { font-size: 4px; }
 
   .settings {
     position: fixed; right: 1rem; top: 64px; z-index: 30; width: 250px; max-height: calc(100vh - 80px); overflow: auto;
@@ -184,7 +188,7 @@
     <button id="reset" class="reset" title="Reset view">RESET</button>
   </div>
 
-<script src="mapdata.js"></script>
+<script src="mapdata.js?v=5"></script>
 <script>
 (function () {
   var MD = window.MAPDATA;
@@ -219,8 +223,8 @@
   };
 
   var ARMIES = [
-    { id: 'blackrime-alira', house: 'wall', leader: 'Captain Alira Stormhammer', name: 'Captain Alira Stormhammer', count: 3000, at: 'Castle Stormhammer', pos: [295.0, 278.0] },
-    { id: 'blackrime-sera', house: 'wall', leader: 'Lady Seraphina Blackrime', name: 'Lady Seraphina Blackrime', count: 1000, at: 'The Ice Wall', pos: [243.6, 205.3] },
+    { id: 'blackrime-alira', house: 'wall', leader: 'Captain Alira Stormhammer', name: 'Captain Alira Stormhammer', count: 3000, at: 'Castle Stormhammer', pos: [152.0, 236.7] },
+    { id: 'blackrime-sera', house: 'wall', leader: 'Lady Seraphina Blackrime', name: 'Lady Seraphina Blackrime', count: 1000, at: 'The Ice Wall', pos: [226.0, 229.6] },
     { id: 'lunaire-host', house: 'crown', leader: 'Lord Commander Bratha Boulderan', name: 'The Crownlands Host', count: 10000, at: 'King\u2019s Landing', pos: [245.9, 521.6] }
   ];
 
@@ -409,7 +413,7 @@
       t.setAttribute('x', r.labelPos[0]);
       t.setAttribute('y', r.labelPos[1]);
       t.textContent = r.label;
-      t.setAttribute('class', (r.compact ? 'region-label small' : 'region-label') + (key === 'west' ? ' west' : '') + (key === 'river' ? ' river' : ''));
+      t.setAttribute('class', (r.compact ? 'region-label small' : 'region-label') + (key === 'west' ? ' west' : '') + (key === 'river' ? ' river' : '') + (key === 'storm' ? ' storm' : '') + (key === 'iron' ? ' iron' : ''));
       t.setAttribute('data-key', key);
       svg.appendChild(t);
       placeOK(r.labelPos[0], r.labelPos[1], r.label);
@@ -447,16 +451,21 @@
         ec.setAttribute('data-key', key);
         ec.setAttribute('data-tip', ex.name);
         svg.appendChild(ec);
-        if (ex.name === 'The Twins' || ex.name === 'Castle Stormhammer' || ex.name === 'Ruins of Ruela Fort') {
+        if (ex.name === 'The Twins' || ex.name === 'Castle Stormhammer' || ex.name === 'Ruins of Ruela Fort' || ex.name === 'Old Redwood') {
           var twl = document.createElementNS(ns, 'text');
-          twl.setAttribute('x', ex.pos[0]);
-          twl.setAttribute('y', ex.pos[1] - 3);
+          var lx = ex.pos[0], ly = ex.pos[1] - 3;
+          if (ex.name === 'Castle Stormhammer') { lx = ex.pos[0] + 17; ly = ex.pos[1] + 12; }
+          if (ex.name === 'Ruins of Ruela Fort') { lx = ex.pos[0] - 10; ly = ex.pos[1] + 18.5; }
+          if (ex.name === 'Old Redwood') { ly = ex.pos[1] + 13; }
+          var tiny = (ex.name === 'Castle Stormhammer' || ex.name === 'Ruins of Ruela Fort');
+          twl.setAttribute('x', lx);
+          twl.setAttribute('y', ly);
           twl.setAttribute('text-anchor', 'middle');
-          twl.setAttribute('class', 'sight-label');
+          twl.setAttribute('class', tiny ? 'sight-label tiny-label' : 'sight-label');
           twl.textContent = ex.name;
           twl.setAttribute('data-key', key);
           svg.appendChild(twl);
-          placeOK(ex.pos[0], ex.pos[1] - 3, ex.name);
+          placeOK(lx, ly, ex.name);
           sightLabels++;
           continue;
         }
@@ -505,7 +514,7 @@
     wl.setAttribute('x', wallSeat[0]);
     wl.setAttribute('y', wallSeat[1] - 8);
     wl.setAttribute('text-anchor', 'middle');
-    wl.setAttribute('class', 'city-label seat-label');
+    wl.setAttribute('class', 'city-label seat-label wall-seat');
     wl.textContent = 'The Ice Wall';
     wl.setAttribute('data-key', 'wall');
     wl.style.fill = wh.color;
