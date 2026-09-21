@@ -22,7 +22,7 @@
   .topbar nav a { color: #bbb; text-decoration: none; font-size: 0.8rem; letter-spacing: 0.1em; }
   .topbar nav a:hover { color: #fff; }
 
-  #viewport { position: fixed; inset: 52px 0 0 0; background: #000; cursor: grab; overflow: hidden;
+  #viewport { position: fixed; inset: 52px 0 0 0; background: #000; cursor: grab; overflow: hidden; touch-action: none;
     background-image: radial-gradient(ellipse at 50% 40%, #111 0%, #050505 55%, #000 100%); }
   #viewport.dragging { cursor: grabbing; }
   #map { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
@@ -37,16 +37,21 @@
   .region[data-claimed]:hover { fill: color-mix(in srgb, var(--c) 48%, transparent); }
   .region.active { stroke: #fff; stroke-width: 2.6; }
   #map.no-areas .region { fill: transparent !important; }
-  #map.hide-markers .city, #map.hide-markers .city-label, #map.hide-markers .sight, #map.hide-markers .sight-label { opacity: 0; }
+  #map.hide-markers .city, #map.hide-markers .city-label, #map.hide-markers .sight, #map.hide-markers .sight-label, #map.hide-markers .army { opacity: 0; }
 
-  .region-label { fill: #f2f2f2; font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; letter-spacing: 0.24em; pointer-events: none; }
-  .region-label.small { font-size: 13px; letter-spacing: 0.16em; }
+  .region-label { fill: #f2f2f2; font-family: 'Cinzel', serif; font-size: 9px; font-weight: 700; letter-spacing: 0.14em; pointer-events: none; paint-order: stroke; stroke: rgba(0, 0, 0, 0.85); stroke-width: 1.4px; }
+  .region-label.small { font-size: 7px; letter-spacing: 0.1em; }
+  .region-label.west { font-size: 6px; letter-spacing: 0.08em; }
+  .region-label.river { font-size: 6px; letter-spacing: 0.06em; }
   .city { fill: #fff; stroke: #000; stroke-width: 1.2; cursor: pointer; }
   .city.seat { stroke: #000; stroke-width: 1.4; }
   .city:hover { fill: #888; }
   .sight { fill: #333; stroke: #777; stroke-width: 1; pointer-events: none; }
-  .city-label, .sight-label { fill: #bbb; font-family: 'Cinzel', serif; font-size: 6.5px; letter-spacing: 0.04em; pointer-events: none; }
-  .city-label.seat-label { fill: #fff; font-size: 6.5px; }
+  .army { cursor: grab; fill: var(--a); stroke: #000; stroke-width: 1.1; }
+  .army.dragging { cursor: grabbing; }
+  .army.selected { stroke: #fff; stroke-width: 1.4; }
+  .city-label, .sight-label { fill: #bbb; font-family: 'Cinzel', serif; font-size: 5px; letter-spacing: 0.02em; pointer-events: none; paint-order: stroke; stroke: rgba(0, 0, 0, 0.85); stroke-width: 1px; }
+  .city-label.seat-label { fill: #fff; font-size: 7px; }
 
   .settings {
     position: fixed; right: 1rem; top: 64px; z-index: 30; width: 250px; max-height: calc(100vh - 80px); overflow: auto;
@@ -74,6 +79,11 @@
   }
   .settings ul.list li.claimed-b small { display: block; color: #888; font-size: 0.68rem; letter-spacing: 0.08em; margin-top: 0.15rem; }
   .settings ul.list li.open-summary { cursor: default; color: #555; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; padding-top: 0.5rem; border-top: 1px solid #222; margin-top: 0.4rem; }
+  .settings .hint { color: #666; font-size: 0.66rem; letter-spacing: 0.08em; margin: 0.2rem 0 0.5rem; }
+  .settings ul.list li.selected { box-shadow: inset 0 0 0 1px #fff; }
+  .settings .reset-armies { float: right; color: #666; font-size: 0.6rem; letter-spacing: 0.14em; cursor: pointer; }
+
+  h4 .reset-armies:hover { color: #fff; }
   .chip { width: 10px; height: 10px; display: inline-block; border: 1px solid #666; flex: none; }
 
   .settings .coords { font-size: 0.72rem; color: #777; font-family: Consolas, monospace; margin-top: 0.6rem; letter-spacing: 0.1em; }
@@ -144,6 +154,11 @@
       <h4>Current Houses</h4>
       <ul class="list" id="houses"></ul>
 
+      <div class="divider"></div>
+      <h4>Current Armies</h4>
+      <p class="hint">Troops stand garrisoned in their home territories.</p>
+      <ul class="list" id="armies"></ul>
+
       <div class="attrib">Basemap: cadaei &middot; theMountainGoat &middot; Tear (CC BY-NC-SA 3.0)</div>
       <div class="coords" id="coords">x: &mdash; &nbsp; y: &mdash;</div>
     </div>
@@ -179,7 +194,7 @@
     north: { name: 'THE NORTH',       label: 'North',      compact: false },
     iron:  { name: 'THE IRON ISLANDS',label: 'Iron Is.',    compact: true  },
     west:  { name: 'THE WESTERLANDS', label: 'Westerlands', compact: false },
-    river: { name: 'THE RIVERLANDS',  label: 'Riverlands',  compact: false },
+    river: { name: 'THE RIVERLANDS',  label: 'Riverlands',  compact: true  },
     vale:  { name: 'THE VALE',        label: 'Vale',        compact: false },
     crown: { name: 'THE CROWNLANDS',  label: 'Crownlands',  compact: true  },
     reach: { name: 'THE REACH',       label: 'Reach',       compact: false },
@@ -192,21 +207,74 @@
   };
 
   var HOUSES = {
-    wall: { name: 'House Blackrime', sigil: 'TBD', words: 'The Dark Yields to Us', leader: '\u2014', status: 'claimed',
+    wall: { name: 'House Blackrime', sigil: 'TBD', words: 'The Dark Yields to Us', leader: 'Lady Seraphina Blackrime', status: 'claimed',
       color: '#a8a8a8',
-      note: 'House Blackrime holds only The Ice Wall \u2014 nothing more. Current Lord Paramount \u2014 at war with House Lunaire, King of the Crownlands and Lord of the Vale.' },
-    vale: { name: 'House Lunaire', sigil: 'TBD', words: 'Honor Above All', leader: 'King of the Crownlands', status: 'claimed',
+      note: 'House Blackrime holds only The Ice Wall \u2014 nothing more. Current Lady Paramount \u2014 at war with House Lunaire, King of the Crownlands and Lord of the Vale.' },
+    vale: { name: 'House Lunaire', sigil: 'TBD', words: 'Honor Above All', leader: 'TBD', status: 'claimed',
       color: '#db7bff',
       note: 'House Lunaire is King of the Crownlands and overlord of the Vale.' },
-    crown: { name: 'House Lunaire', sigil: 'TBD', words: 'Honor Above All', leader: 'King of the Crownlands', status: 'claimed',
+    crown: { name: 'House Lunaire', sigil: 'TBD', words: 'Honor Above All', leader: 'TBD', status: 'claimed',
       color: '#db7bff',
       note: 'House Lunaire rules the Crownlands from King\u2019s Landing.' }
   };
+
+  var ARMIES = [
+    { id: 'blackrime-alira', house: 'wall', leader: 'Captain Alira Stormhammer', name: 'Captain Alira Stormhammer', count: 3000, at: 'Castle Stormhammer', pos: [295.0, 278.0] },
+    { id: 'blackrime-sera', house: 'wall', leader: 'Lady Seraphina Blackrime', name: 'Lady Seraphina Blackrime', count: 1000, at: 'The Ice Wall', pos: [243.6, 205.3] },
+    { id: 'lunaire-host', house: 'crown', leader: 'Lord Commander Bratha Boulderan', name: 'The Crownlands Host', count: 10000, at: 'King\u2019s Landing', pos: [245.9, 521.6] }
+  ];
+
+  var ARMY_ELS = {};
 
   function houseFor(key) {
     var h = HOUSES[key];
     if (h && h.status === 'claimed') return h;
     return null;
+  }
+
+  function armyById(id) {
+    for (var i = 0; i < ARMIES.length; i++) if (ARMIES[i].id === id) return ARMIES[i];
+    return null;
+  }
+
+  function renderArmies() {
+    ARMIES.forEach(function (a) {
+      var h = HOUSES[a.house] || {};
+      var el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      el.setAttribute('d', 'M0,-4.5 L3.4,-2.5 L3.4,1.3 C3.4,3.9 1.6,5 0,5.6 C-1.6,5 -3.4,3.9 -3.4,1.3 L-3.4,-2.5 Z');
+      el.setAttribute('class', 'army');
+      el.setAttribute('transform', 'translate(' + a.pos[0] + ',' + a.pos[1] + ') scale(0.55)');
+      el.setAttribute('data-army', a.id);
+      el.style.setProperty('--a', h.color || '#fff');
+      el.setAttribute('data-tip', a.name + ' \u00B7 ' + a.count.toLocaleString() + ' troops \u00B7 ' + (h.name || 'Unaligned'));
+      svg.appendChild(el);
+      ARMY_ELS[a.id] = el;
+    });
+  }
+
+  function selectArmy(id) {
+    var a = armyById(id);
+    if (!a) return;
+    var h = HOUSES[a.house] || {};
+    Object.keys(ARMY_ELS).forEach(function (k) {
+      ARMY_ELS[k].classList.toggle('selected', k === id);
+    });
+    document.querySelectorAll('#armies li').forEach(function (li) {
+      li.classList.toggle('selected', li.getAttribute('data-army') === id);
+    });
+    var card = document.getElementById('info');
+    var chip = document.getElementById('p-chip');
+    chip.style.backgroundColor = h.color || '#666';
+    chip.style.borderColor = h.color || '#666';
+    document.getElementById('p-name').textContent = a.name;
+    document.getElementById('p-region').textContent = (h.name || 'Unaligned') + ' \u00B7 ' + a.at;
+    document.getElementById('p-words').textContent = a.count.toLocaleString() + ' troops';
+    document.getElementById('p-seat').textContent = a.at;
+    document.getElementById('p-sigil').textContent = h.sigil || '\u2014';
+    document.getElementById('p-leader').textContent = a.leader || h.leader || '\u2014';
+    document.getElementById('p-status').textContent = 'GARRISONED';
+    document.getElementById('p-note').textContent = 'Troops stand ready in their home territory until ordered to march.';
+    card.style.display = 'block';
   }
 
   var svg = document.getElementById('map');
@@ -234,7 +302,7 @@
   function zoomAt(mx, my, factor) {
     var px = (mx - view.tx) / view.scale;
     var py = (my - view.ty) / view.scale;
-    view.scale = Math.min(10, Math.max(1, view.scale * factor));
+    view.scale = Math.min(10, Math.max(0.7, view.scale * factor));
     view.tx = mx - px * view.scale;
     view.ty = my - py * view.scale;
     applyView();
@@ -297,6 +365,17 @@
     rivEl.setAttribute('class', 'river');
     svg.appendChild(rivEl);
 
+    var labelBoxes = [];
+    function placeOK(x, y, text) {
+      var w = text.length * 4.3, h = 7.5;
+      for (var i = 0; i < labelBoxes.length; i++) {
+        var b = labelBoxes[i];
+        if (Math.abs(x - b.x) < (w + b.w) / 2 + 4 && Math.abs(y - b.y) < (h + b.h) / 2 + 3) return false;
+      }
+      labelBoxes.push({ x: x, y: y, w: w, h: h });
+      return true;
+    }
+
     KEYS.forEach(function (key) {
       var m = META[key];
       var r = {
@@ -330,9 +409,10 @@
       t.setAttribute('x', r.labelPos[0]);
       t.setAttribute('y', r.labelPos[1]);
       t.textContent = r.label;
-      t.setAttribute('class', r.compact ? 'region-label small' : 'region-label');
+      t.setAttribute('class', (r.compact ? 'region-label small' : 'region-label') + (key === 'west' ? ' west' : '') + (key === 'river' ? ' river' : ''));
       t.setAttribute('data-key', key);
       svg.appendChild(t);
+      placeOK(r.labelPos[0], r.labelPos[1], r.label);
 
       var c = document.createElementNS(ns, 'circle');
       c.setAttribute('cx', seat[0]);
@@ -350,11 +430,15 @@
       cl.textContent = r.city;
       cl.setAttribute('data-key', key);
       svg.appendChild(cl);
+      placeOK(seat[0] + 8, seat[1] + 4, r.city);
 
       var sights = MD.sights[key] || [];
-      for (var si = 0; si < sights.length && si < 3; si++) {
+      var sightLabels = 0;
+      for (var si = 0; si < sights.length; si++) {
         var ex = sights[si];
-        if (ex.name === r.city) continue;
+        if (ex.name === r.city || ex.name === 'Castle Black') continue;
+        var ddx = ex.pos[0] - seat[0], ddy = ex.pos[1] - seat[1];
+        if (Math.sqrt(ddx * ddx + ddy * ddy) < 30) continue;
         var ec = document.createElementNS(ns, 'circle');
         ec.setAttribute('cx', ex.pos[0]);
         ec.setAttribute('cy', ex.pos[1]);
@@ -363,13 +447,35 @@
         ec.setAttribute('data-key', key);
         ec.setAttribute('data-tip', ex.name);
         svg.appendChild(ec);
-        var el = document.createElementNS(ns, 'text');
-        el.setAttribute('x', ex.pos[0] + 7);
-        el.setAttribute('y', ex.pos[1] + 3);
-        el.setAttribute('class', 'sight-label');
-        el.textContent = ex.name;
-        el.setAttribute('data-key', key);
-        svg.appendChild(el);
+        if (ex.name === 'The Twins' || ex.name === 'Castle Stormhammer' || ex.name === 'Ruins of Ruela Fort') {
+          var twl = document.createElementNS(ns, 'text');
+          twl.setAttribute('x', ex.pos[0]);
+          twl.setAttribute('y', ex.pos[1] - 3);
+          twl.setAttribute('text-anchor', 'middle');
+          twl.setAttribute('class', 'sight-label');
+          twl.textContent = ex.name;
+          twl.setAttribute('data-key', key);
+          svg.appendChild(twl);
+          placeOK(ex.pos[0], ex.pos[1] - 3, ex.name);
+          sightLabels++;
+          continue;
+        }
+        if (sightLabels >= 2) continue;
+        var placedLabel = false;
+        var offs = [[7, 3], [4, -4], [-7, 3], [4, 11]];
+        for (var oi = 0; oi < offs.length; oi++) {
+          if (!placeOK(ex.pos[0] + offs[oi][0], ex.pos[1] + offs[oi][1], ex.name)) continue;
+          placedLabel = true;
+          var el = document.createElementNS(ns, 'text');
+          el.setAttribute('x', ex.pos[0] + offs[oi][0]);
+          el.setAttribute('y', ex.pos[1] + offs[oi][1]);
+          el.setAttribute('class', 'sight-label');
+          el.textContent = ex.name;
+          el.setAttribute('data-key', key);
+          svg.appendChild(el);
+          break;
+        }
+        if (placedLabel) sightLabels++;
       }
     });
 
@@ -396,15 +502,18 @@
     svg.appendChild(ws);
 
     var wl = document.createElementNS(ns, 'text');
-    wl.setAttribute('x', wallSeat[0] + 14);
-    wl.setAttribute('y', wallSeat[1] + 5);
+    wl.setAttribute('x', wallSeat[0]);
+    wl.setAttribute('y', wallSeat[1] - 8);
+    wl.setAttribute('text-anchor', 'middle');
     wl.setAttribute('class', 'city-label seat-label');
     wl.textContent = 'The Ice Wall';
     wl.setAttribute('data-key', 'wall');
     wl.style.fill = wh.color;
     svg.appendChild(wl);
+    placeOK(wallSeat[0], wallSeat[1] - 8, 'The Ice Wall');
 
     SEATS['wall'] = wallSeat;
+    renderArmies();
 
     var list = document.getElementById('list');
     KEYS.concat([{ key: 'wall', label: 'The Wall', pos: wallSeat }]).forEach(function (r) {
@@ -453,6 +562,22 @@
     sum.textContent = open + ' region' + (open === 1 ? '' : 's') + ' open for claim';
     houses.appendChild(sum);
 
+    var armiesUl = document.getElementById('armies');
+    ARMIES.forEach(function (a) {
+      var h = HOUSES[a.house] || {};
+      var li = document.createElement('li');
+      li.className = 'claimed-b';
+      li.setAttribute('data-army', a.id);
+      li.style.borderColor = h.color || '#555';
+      li.innerHTML = '<span class="chip" style="background:' + (h.color || '#555') + ';border-color:' + (h.color || '#555') + ';"></span><span>' +
+        a.name + '</span><small>' + a.count.toLocaleString() + ' \u00B7 ' + a.at + '</small>';
+      li.addEventListener('click', function () {
+        selectArmy(a.id);
+        zoomTo(a.pos[0], a.pos[1]);
+      });
+      armiesUl.appendChild(li);
+    });
+
     var areas = document.getElementById('toggleAreas');
     areas.addEventListener('change', function () { svg.classList.toggle('no-areas', !areas.checked); });
     var marks = document.getElementById('toggleMarkers');
@@ -496,6 +621,8 @@
 
   svg.addEventListener('click', function (e) {
     if (suppressClick) return;
+    var aid = e.target.getAttribute && e.target.getAttribute('data-army');
+    if (aid) { selectArmy(aid); return; }
     var key = e.target.getAttribute && e.target.getAttribute('data-key');
     if (key) select(key);
   });
@@ -503,21 +630,23 @@
   var dragging = false, start = null, suppressClick = false;
 
   viewport.addEventListener('pointerdown', function (e) {
-    if (e.target.closest && e.target.closest('.region, .city, .sight, .wall')) return;
+    if (e.target.closest && e.target.closest('.city, .sight, .wall')) return;
     if (e.button !== 0) return;
     dragging = true; viewport.classList.add('dragging');
     tooltip.style.display = 'none';
-    start = { x: e.clientX - view.tx, y: e.clientY - view.ty };
+    start = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty };
     viewport.setPointerCapture(e.pointerId);
   });
 
   viewport.addEventListener('pointermove', function (e) {
     if (!dragging) return;
-    var moved = Math.abs(e.clientX - start.x - view.tx) + Math.abs(e.clientY - start.y - view.ty);
-    if (moved > 6) suppress();
-    view.tx = e.clientX - start.x;
-    view.ty = e.clientY - start.y;
-    applyView();
+    var dx = e.clientX - start.x, dy = e.clientY - start.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) {
+      suppress();
+      view.tx = start.tx + dx;
+      view.ty = start.ty + dy;
+      applyView();
+    }
   });
 
   function endDrag() { dragging = false; viewport.classList.remove('dragging'); }
